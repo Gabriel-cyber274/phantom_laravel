@@ -5,6 +5,8 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
+
 
 class Authcontroller extends Controller
 {
@@ -14,18 +16,27 @@ class Authcontroller extends Controller
      * @return \Illuminate\Http\Response
      */
     public function Login (Request $request) {
-        $fields = $request->validate([
+        $fields = Validator::make($request->all(), [
             'email'=> 'required|string',
             'password'=> 'required|string',
         ]);
+        
+        if($fields->fails()) {
+            $response = [
+                'errors'=> $fields->errors(),
+                'success' => false
+            ];
 
-        $user = User::where('email', $fields['email'])->first();
+            return response($response);
+        }
 
-        if(!$user || !Hash::check($fields['password'], $user->password)) {
+        $user = User::where('email', $request->email)->first();
+
+        if(!$user || !Hash::check($request->password, $user->password)) {
             return response([
                 'message' => 'incorrect credentials',
                 'success' => false
-            ], 401);
+            ]);
         }
         // else if(is_null($user->email_verified_at)) {
         //     return response([
@@ -48,16 +59,25 @@ class Authcontroller extends Controller
     }
 
     public function Register (Request $request) {
-        $fields = $request->validate([
+        $fields = Validator::make($request->all(),[
             'name'=> 'required|string',
             'email'=> 'required|string|unique:users,email',
             'password'=> 'required|string|min:8',
-            'gender'=>'required|string',
+            // 'gender'=>'required|string',
             // 'department'=>'nullable|string',
             // 'faculty'=>'nullable|string',
             'location'=>'nullable|string',
             // 'student'=>'required|boolean',
         ]);
+
+        if($fields->fails()) {
+            $response = [
+                'errors'=> $fields->errors(),
+                'success' => false
+            ];
+
+            return response($response);
+        }
 
         $user = User::create([
             'name'=> $request['name'],
