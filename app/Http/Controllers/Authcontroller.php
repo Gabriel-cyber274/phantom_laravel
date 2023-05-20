@@ -18,7 +18,7 @@ class Authcontroller extends Controller
     public function Login (Request $request) {
         $fields = Validator::make($request->all(), [
             'email'=> 'required|string',
-            'password'=> 'required|string',
+            'password'=> 'required|string|min:8',
         ]);
         
         if($fields->fails()) {
