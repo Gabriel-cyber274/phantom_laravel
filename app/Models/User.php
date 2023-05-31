@@ -21,11 +21,10 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'gender',
+        'avatar_id',
         'location',
-        // 'student',
-        // 'department',
-        // 'faculty',
+        'nickname',
+        'tutorial',
     ];
 
     /**
@@ -48,6 +47,16 @@ class User extends Authenticatable
     ];
 
     public function AnonymousLinks () {
-        return $this->hasMany(Anonymous::class, 'user_id', 'id');
+        return $this->hasOne(Anonymous::class, 'user_id', 'id');
     }
+
+    public function rooms () {
+        return $this->hasMany(rooms::class, 'user_id', 'id');
+    }
+
+    public function invite () {
+        return $this->hasMany(Invite::class, 'user_id', 'id');
+    }
+
+
 }

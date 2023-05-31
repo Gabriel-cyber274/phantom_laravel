@@ -5,22 +5,28 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Anonymous extends Model
+class rooms extends Model
 {
     use HasFactory;
 
     protected $fillable = [
         'user_id',
-        'name',
-        
+        'room_name',
+        'creator_id',
+        'creator_avatar',
+        'block',
+        'report',
+        'reveal',
+        'links'
     ];
 
-    
     public function user() {
         return $this->belongsTo(User::class);
     }
 
-    public function messages() {
-        return $this->belongsToMany(AnonymousMessage::class, 'anon_message', 'anon_id', 'message_id');
+    public function messages () {
+        return $this->belongsToMany(RoomMessage::class, 'room_chats', 'room_id', 'chat_id');
     }
+
 }
+

@@ -4,9 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\Anonymous;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Response;
+use App\Models\Invite;
+use App\Models\rooms;
 use App\Models\User;
 use App\Models\AnonymousMessage;
+use Illuminate\Support\Str;
 
 
 class AnonymousController extends Controller
@@ -40,219 +44,183 @@ class AnonymousController extends Controller
      */
     public function goodReviews()
     {
-        //
-        $me = auth()->user();
-        // $departmentAll = [];        
-        // $departmentWeekly = [];
-        // $facultyAll = [];
-        // $facultyWeekly = [];
-        $allTimeL = [];
-        $weeklyL = [];
-        $monthly = [];
+        $id = auth()->user()->id;
+        $myLocationUsers = User::with('invite')->where('location', auth()->user()->location)->get();
 
+        $result1 = [];
 
-        if(!is_null($me->location)) {
-            $userMainL = User::where('location', $me->location)->get();
-            $anonL = [];
-            $destruct = [];
-            $destruct2=[];
-            $messagesL = [];
-            $mainL = [];
-            $fullDetailsD = [];
-            
-            foreach($userMainL as $userMain) {
-                $anonymous = Anonymous::with('messages')->where('user_id', $userMain->id)->get();
-                if(count($anonymous) > 0) {
-                    $anonL[] = $anonymous;
-                }
-            }
-
-
-            foreach(collect($anonL) as $anon2){
-                $destruct[]= collect($anon2)->first();
-            }
-            
-            foreach($destruct as $des) {
-                foreach($des->messages as $res) {
-                    $AnonymousMessage = AnonymousMessage::where('id',$res->id)->where('review', 'good')->get();
-                    if(count($AnonymousMessage) > 0) {
-                        $destruct2[]= $AnonymousMessage;
-                    }
-                }
-            }
-
-            
-            foreach(collect($destruct2) as $des){
-                $messagesL[]= collect($des)->first();
-            }
-
-            foreach (collect($messagesL) as $fill) {
-                $anonymous = Anonymous::find($fill->anonymous_id);
-                $user= User::where('id', $anonymous->user_id)->get()->first();
-                $result = [
-                    'name'=> $anonymous->name,
-                    'user_name'=> $user->name,
-                    'user_id'=>$anonymous->user_id,
-                    'total'=> count($anonymous->messages),
-                    'good'=> count(collect($messagesL)->where('anonymous_id', $anonymous->id)->all()),
+        foreach($myLocationUsers as $user) {
+            if(count($user->invite) > 0 && count(rooms::where('user_id', $user->id)->get()) > 0  && $user->invite[count($user->invite)-1]->created_at < rooms::where('user_id', $user->id)->get()->last()->created_at) {
+                $main = [
+                    'id'=> $user->id,
+                    'name'=>$user->name,
+                    'avatar_id'=> $user->avatar_id,
+                    'points'=> count($user->invite)+count(rooms::where('user_id', $user->id)->get()),
+                    'created_at'=> $user->invite[count($user->invite)-1]->created_at,
+                    'updated_at'=> $user->invite[count($user->invite)-1]->created_at,
                 ];
-                $mainL[]= $result;
+                
+                $result1[]=$main;
             }
-
-            
-            $sortedL = collect($mainL)->sortByDesc('good');
-            $finalL  = [];
-            foreach($sortedL->values()->all() as $data){
-                $finalL[] = $data;
+            else if (count($user->invite) > 0 && count(rooms::where('user_id', $user->id)->get()) > 0  && rooms::where('user_id', $user->id)->get()->last()->created_at < $user->invite[count($user->invite)-1]->created_at ) {
+                $main = [
+                    'id'=> $user->id,
+                    'name'=>$user->name,
+                    'avatar_id'=> $user->avatar_id,
+                    'points'=> count($user->invite)+count(rooms::where('user_id', $user->id)->get()),
+                    'created_at'=> rooms::where('user_id', $user->id)->get()->last()->created_at,
+                    'updated_at'=> rooms::where('user_id', $user->id)->get()->last()->created_at,
+                ];
+                
+                $result1[]=$main;
             }
-
-            $weeklyL = collect($finalL)->where('created_at', '==', now()->subHours(167))->all();
-            $monthL = collect($finalL)->where('created_at', '==', now()->subHours(690))->all();
-
-            
-            $allTimeL[] = $finalL;
-            $weeklyL[] = $weeklyL;
-            $monthly[] = $monthL;
-
+            else if (count($user->invite) == 0 && count(rooms::where('user_id', $user->id)->get()) > 0) {
+                $main = [
+                    'id'=> $user->id,
+                    'name'=>$user->name,
+                    'avatar_id'=> $user->avatar_id,
+                    'points'=> count($user->invite)+count(rooms::where('user_id', $user->id)->get()),
+                    'created_at'=> rooms::where('user_id', $user->id)->get()->last()->created_at,
+                    'updated_at'=> rooms::where('user_id', $user->id)->get()->last()->created_at,
+                ];
+                
+                $result1[]=$main;
+            }else if (count(rooms::where('user_id', $user->id)->get()) == 0 && count($user->invite) > 0) {
+                $main = [
+                    'id'=> $user->id,
+                    'name'=>$user->name,
+                    'avatar_id'=> $user->avatar_id,
+                    'points'=> count($user->invite)+count(rooms::where('user_id', $user->id)->get()),
+                    'created_at'=> $user->invite[count($user->invite)-1]->created_at,
+                    'updated_at'=> $user->invite[count($user->invite)-1]->created_at,
+                ];
+                
+                $result1[]=$main;
+            }else {
+                $main = [
+                    'id'=> $user->id,
+                    'name'=>$user->name,
+                    'avatar_id'=> $user->avatar_id,
+                    'points'=> count($user->invite)+count(rooms::where('user_id', $user->id)->get()),
+                    'created_at'=> $user->created_at,
+                    'updated_at'=> $user->created_at,
+                ];
+                
+                $result1[]=$main;
+            }
         }
 
-        // if(!is_null($me->department)) {
-        //     // department
-        //     $userMainLD = User::where('department', $me->department)->get();
-        //     $anonD = [];
-        //     $destruct = [];
-        //     $destruct2=[];
-        //     $messagesD = [];
-        //     $mainLD = [];
-        //     $fullDetailsD = [];
-            
-        //     foreach($userMainLD as $userMain) {
-        //         $anonymous = Anonymous::with('messages')->where('user_id', $userMain->id)->get();
-        //         if(count($anonymous) > 0) {
-        //             $anonD[] = $anonymous;
-        //         }
-        //     }
+        
+        $sortedL = collect($result1)->sortByDesc('points');
+        $finalL  = [];
+        foreach($sortedL->values()->all() as $data){
+            $finalL[] = $data;
+        }
 
+        $weeklyL = collect($finalL)->where('created_at', '==', now()->subHours(167))->all();
+        $monthL = collect($finalL)->where('created_at', '==', now()->subHours(690))->all();
 
-        //     foreach(collect($anonD) as $anon2){
-        //         $destruct[]= collect($anon2)->first();
-        //     }
-            
-        //     foreach($destruct as $des) {
-        //         foreach($des->messages as $res) {
-        //             $AnonymousMessage = AnonymousMessage::where('id',$res->id)->where('review', 'good')->get();
-        //             if(count($AnonymousMessage) > 0) {
-        //                 $destruct2[]= $AnonymousMessage;
-        //             }
-        //         }
-        //     }
-
-            
-        //     foreach(collect($destruct2) as $des){
-        //         $messagesD[]= collect($des)->first();
-        //     }
-
-        //     foreach (collect($messagesD) as $fill) {
-        //         $anonymous = Anonymous::find($fill->anonymous_id);
-        //         $user= User::where('id', $anonymous->user_id)->get()->first();
-        //         $result = [
-        //             'name'=> $anonymous->name,
-        //             'user_name'=> $user->name,
-        //             'user_id'=>$anonymous->user_id,
-        //             'total'=> count($anonymous->messages),
-        //             'good'=> count(collect($messagesD)->where('anonymous_id', $anonymous->id)->all()),
-        //         ];
-        //         $mainLD[]= $result;
-        //     }
-
-            
-        //     $sortedD = collect($mainLD)->sortByDesc('good');
-        //     $finalD  = [];
-        //     foreach($sortedD->values()->all() as $data){
-        //         $finalD[] = $data;
-        //     }
-
-        //     $weeklyD = collect($finalD)->where('created_at', '==', now()->subHours(167))->all();
-
-        //     $departmentAll[] = $finalD;
-        //     $departmentWeekly[]= $weeklyD;
-        // }
-
-        // if(!is_null($me->faculty)) {
-        //     $userMainLD = User::where('faculty', $me->faculty)->get();
-        //     $anonF = [];
-        //     $destruct = [];
-        //     $destruct2=[];
-        //     $messagesF = [];
-        //     $mainLF = [];
-        //     $fullDetailsD = [];
-            
-        //     foreach($userMainLD as $userMain) {
-        //         $anonymous = Anonymous::with('messages')->where('user_id', $userMain->id)->get();
-        //         if(count($anonymous) > 0) {
-        //             $anonF[] = $anonymous;
-        //         }
-        //     }
-
-
-        //     foreach(collect($anonF) as $anon2){
-        //         $destruct[]= collect($anon2)->first();
-        //     }
-            
-        //     foreach($destruct as $des) {
-        //         foreach($des->messages as $res) {
-        //             $AnonymousMessage = AnonymousMessage::where('id',$res->id)->where('review', 'good')->get();
-        //             if(count($AnonymousMessage) > 0) {
-        //                 $destruct2[]= $AnonymousMessage;
-        //             }
-        //         }
-        //     }
-
-            
-        //     foreach(collect($destruct2) as $des){
-        //         $messagesF[]= collect($des)->first();
-        //     }
-
-        //     foreach (collect($messagesF) as $fill) {
-        //         $anonymous = Anonymous::find($fill->anonymous_id);
-        //         $user= User::where('id', $anonymous->user_id)->get()->first();
-        //         $result = [
-        //             'name'=> $anonymous->name,
-        //             'user_name'=> $user->name,
-        //             'user_id'=>$anonymous->user_id,
-        //             'total'=> count($anonymous->messages),
-        //             'good'=> count(collect($messagesF)->where('anonymous_id', $anonymous->id)->all()),
-        //         ];
-        //         $mainLF[]= $result;
-        //     }
-
-            
-        //     $sortedF = collect($mainLF)->sortByDesc('good');
-        //     $finalF  = [];
-        //     foreach($sortedF->values()->all() as $data){
-        //         $finalF[] = $data;
-        //     }
-
-        //     $weeklyF = collect($finalF)->where('created_at', '==', now()->subHours(167))->all();
-
-        //     $facultyAll[] = $finalF;
-        //     $facultyWeekly[]= $weeklyF;
-        // }
-
-
+        
         $response = [
-            'locationAll' => $allTimeL,
-            'locationWeekly' => $weeklyL,
-            'locationMonthly' => $monthly,
-            // 'facultyAll'=> $facultyAll,
-            // 'facultyWeekly' => $facultyWeekly,
-            // 'departmentAll' => $departmentAll,
-            // 'departmentWeekly'=> $departmentWeekly,
-            'message'=> 'retrieved successfully',
+            'all'=> $finalL,
+            'weekly'=> $weeklyL,
+            'monthly'=>$monthL,
+            'message'=> 'Leaderboard Retrieved',
             'success' => true
         ];
 
         return response($response);
+
+    }
+
+    
+    public function getLink()
+    {
+        //
+        $url = 'http://localhost:3000/chat/user';
+
+        $id = Auth()->user()->id;
+        $userLink = Anonymous::where('user_id', $id)->get();
+        $randomCharacters = Str::random(15);
+        $index = strpos(auth()->user()->name, ' ');
+        
+
+        if(count($userLink) !== 0 && $userLink->first()->created_at <= now()->subHours(161) && $index) {
+            $userLink->first()->update([
+                'name' => $randomCharacters,
+            ]);
+    
+            $response = [
+                'link'=>$url.'/'.$id.'/'.substr(auth()->user()->name,0, $index).'/'.auth()->user()->nickname.'/'.auth()->user()->avatar_id.'/'.$userLink->first()->name.'/'.$userLink->first()->id,
+                'message'=>'link retrieved',
+                'success' => true
+            ];
+            
+            return response($response);
+        }
+        else if(count($userLink) !== 0 && $userLink->first()->created_at <= now()->subHours(161) && !$index) {
+            $userLink->first()->update([
+                'name' => $randomCharacters,
+            ]);
+    
+            $response = [
+                'link'=>$url.'/'.$id.'/'.auth()->user()->name.'/'.auth()->user()->nickname.'/'.auth()->user()->avatar_id.'/'.$userLink->first()->name.'/'.$userLink->first()->id,
+                'message'=>'link retrieved',
+                'success' => true
+            ];
+            
+            return response($response);
+        }
+        else if(count($userLink) !== 0 && !($userLink->first()->created_at <= now()->subHours(161)) && !$index) {
+            $response = [
+                'link'=>$url.'/'.$id.'/'.auth()->user()->name.'/'.auth()->user()->nickname.'/'.auth()->user()->avatar_id.'/'.$userLink->first()->name.'/'.$userLink->first()->id,
+                'message'=>'link retrieved',
+                'success' => true
+            ];
+            
+            return response($response);
+            // return substr(auth()->user()->name,0, $index);
+        }
+        else if(count($userLink) !== 0 && !($userLink->first()->created_at <= now()->subHours(161)) && $index) {
+            $response = [
+                'link'=>$url.'/'.$id.'/'.substr(auth()->user()->name,0, $index).'/'.auth()->user()->nickname.'/'.auth()->user()->avatar_id.'/'.$userLink->first()->name.'/'.$userLink->first()->id,
+                'message'=>'link retrieved',
+                'success' => true
+            ];
+            
+            return response($response);
+        }
+        else {
+            $response = [
+                'message'=>"you don't have a link",
+                'success' => false
+            ];
+            
+            return response($response);
+        }
+    }
+
+    public function linkName($id) {
+        // $id = Auth()->user()->id;
+        $userLink = Anonymous::where('id', $id)->get();
+
+        if(count($userLink) !== 0) {
+            $response = [
+                'name' => $userLink->first()->name,
+                'message'=>"link name retrieved",
+                'success' => true,
+            ];
+            
+            return response($response);
+        }else {
+            $response = [
+                'message'=>"link name is null",
+                'success' => false,
+            ];
+            
+            return response($response); 
+        }
+
     }
 
 
@@ -260,25 +228,55 @@ class AnonymousController extends Controller
     {
         //
         $fields = $request->validate([
-            'name'=> 'required|string',
             'url'=> 'required|string'
         ]);
-
+        
+        
         $id = auth()->user()->id;
-        $createLink = Anonymous::create([
-            'name'=> $request->name,
-            'user_id'=> $id,
-        ]);
-       
-        $response = [
-            'phantom_link'=> $request->url.'/'.$createLink->id.'/'.$request->name.'/'.auth()->user()->name.'/'.$id,
-            'message'=> 'link created',
-            'success' => true
-        ];
+        $userLink = Anonymous::where('user_id', $id)->get();
+        $randomCharacters = Str::random(15);
+        $index = strpos(auth()->user()->name, ' ');
 
+        if(count($userLink)=== 0 && !$index) {
+            $createLink = Anonymous::create([
+                'name'=> $randomCharacters,
+                'user_id'=> $id,
+            ]);
+            
+           
+            $response = [
+                'phantom_link'=> $request->url.'/'.$id.'/'.auth()->user()->name.'/'.auth()->user()->nickname.'/'.auth()->user()->avatar_id.'/'.$createLink->name.'/'.$createLink->id,
+                'message'=> 'link created',
+                'success' => true
+            ];
 
-        return response($response);
+            return response($response);
+        }
+        else if(count($userLink)=== 0 && $index) {
+            $createLink = Anonymous::create([
+                'name'=> $randomCharacters,
+                'user_id'=> $id,
+            ]);
+
+            $response = [
+                'phantom_link'=> $request->url.'/'.$id.'/'.substr(auth()->user()->name,0, $index).'/'.auth()->user()->nickname.'/'.auth()->user()->avatar_id.'/'.$createLink->name.'/'.$createLink->id,
+                'message'=> 'link created',
+                'success' => true
+            ];
+
+            return response($response);
+        }
+        else {
+            $response = [
+                'message'=>'you already have a link',
+                'success' => false
+            ];
+            
+            return response($response);
+        }
     }
+    
+
 
     /**
      * Display the specified resource.

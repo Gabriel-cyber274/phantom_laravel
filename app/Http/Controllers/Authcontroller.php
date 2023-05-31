@@ -1,9 +1,14 @@
 <?php
 
 namespace App\Http\Controllers;
+use App\Models\Anonymous;
+use App\Models\Avatar;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Str;
+use App\Models\rooms;
 use App\Models\User;
+use App\Models\Invite;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 
@@ -46,15 +51,31 @@ class Authcontroller extends Controller
         // }
 
         $token = $user->createToken('myToken')->plainTextToken;
+        $userLink = Anonymous::where('user_id', $user->id)->get();
+        
 
-        $response = [
-            'user'=> $user,
-            'token'=> $token,
-            'message'=> 'logged in',
-            'success' => true
-        ];
+        if(count($userLink) == 0) {
+            $response = [
+                'user'=> $user,
+                'token'=> $token,
+                'hasUrl'=>false,
+                'message'=> 'logged in',
+                'success' => true
+            ];
+    
+            return response($response, 201);
+        }else {
+            $response = [
+                'user'=> $user,
+                'token'=> $token,
+                'hasUrl'=>true,
+                'message'=> 'logged in',
+                'success' => true
+            ];
+    
+            return response($response, 201);
+        }
 
-        return response($response, 201);
 
     }
 
@@ -63,11 +84,7 @@ class Authcontroller extends Controller
             'name'=> 'required|string',
             'email'=> 'required|string|unique:users,email',
             'password'=> 'required|string|min:8',
-            // 'gender'=>'required|string',
-            // 'department'=>'nullable|string',
-            // 'faculty'=>'nullable|string',
             'location'=>'nullable|string',
-            // 'student'=>'required|boolean',
         ]);
 
         if($fields->fails()) {
@@ -79,25 +96,55 @@ class Authcontroller extends Controller
             return response($response);
         }
 
-        $user = User::create([
-            'name'=> $request['name'],
-            'email'=> $request['email'],
-            'password' => bcrypt($request['password']),
-            'gender'=> $request['gender'],
-            // 'department'=> $request['department'],
-            // 'faculty'=> $request['faculty'],
-            'location'=> $request['location'],
-            // 'student'=> $request['student']
-        ]);
+        $avatar = Avatar::get();
+        $randomCharacters = Str::random(3);
 
-        
-        $response = [
-            'user'=> $user,
-            'message'=> 'successful signup',
-            'success' => true
-        ];
-
-        return response($response);
+        if(count($avatar) !== 0) {
+            $user = User::create([
+                'name'=> $request['name'],
+                'email'=> $request['email'],
+                'password' => bcrypt($request['password']),
+                'gender'=> $request['gender'],
+                'location'=> $request['location'],
+                'tutorial'=> false,
+                'avatar_id'=> random_int(0,$avatar->first()->available),
+            ]);
+    
+            $user->update([
+                'nickname'=> 'user'.$randomCharacters.$user->id,
+            ]);
+            
+            $response = [
+                'user'=> $user,
+                'message'=> 'successful signup',
+                'success' => true
+            ];
+    
+            return response($response);
+        }
+        else {
+            $user = User::create([
+                'name'=> $request['name'],
+                'email'=> $request['email'],
+                'password' => bcrypt($request['password']),
+                'gender'=> $request['gender'],
+                'location'=> $request['location'],
+                'tutorial'=> false,
+                'avatar_id'=> random_int(0,3),
+            ]);
+    
+            $user->update([
+                'nickname'=> 'user'.$randomCharacters.$user->id,
+            ]);
+            
+            $response = [
+                'user'=> $user,
+                'message'=> 'successful signup',
+                'success' => true
+            ];
+    
+            return response($response);
+        }
 
 
     }
@@ -116,9 +163,21 @@ class Authcontroller extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function create()
+    public function tutorial()
     {
-        //
+        $id = auth()->user()->id;
+        $user = User::where('id', $id)->get()->first();
+        $user->update([
+            'tutorial'=> true,
+        ]);
+
+        $response = [
+            'user'=> $user,
+            'message'=> 'tutorial completed',
+            'success' => true,
+        ];
+
+        return response($response);
     }
 
     /**
@@ -127,9 +186,128 @@ class Authcontroller extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function userInfo()
     {
         //
+        $id = auth()->user()->id;
+        $user = User::where('id', $id)->get()->first();
+        
+        $response = [
+            'user'=> $user,
+            'message'=> 'user info retrieved',
+            'success' => true,
+        ];
+
+        return response($response);
+    }
+
+
+    public function changeAvatar (Request $request) {
+        $fields = Validator::make($request->all(),[
+            'avatar_id'=> 'required|integer',
+        ]);
+
+        $id = auth()->user()->id;
+        $user = User::where('id', $id)->get()->first();
+        $user->update([
+            'avatar_id'=> $request->avatar_id,
+        ]);
+        
+        $response = [
+            'user'=> $user,
+            'message'=> 'avatar changed',
+            'success' => true,
+        ];
+
+        return response($response);
+    }
+
+    public function addAvatar (Request $request) {
+        $fields = Validator::make($request->all(),[
+            'available'=> 'required|integer',
+        ]);
+
+        $avatar = Avatar::get();
+
+        if(count($avatar) == 0) {
+            $newAvatar = Avatar::create([
+                'available' => $request->available,
+            ]);
+            $response = [
+                'avatars'=> $newAvatar,
+                'message'=> 'avatars updated',
+                'success' => true,
+            ];
+    
+            return response($response);
+        }else {
+            $change = $avatar->first()->update([
+                'available'=> $request->available
+            ]);
+
+            $response = [
+                'avatars'=> $change,
+                'message'=> 'avatars updated',
+                'success' => true,
+            ];
+    
+            return response($response);
+        }
+
+    }
+
+
+    public function inviteUser (Request $request) {
+        $fields = $request->validate([
+            'user_id' => 'required|integer',
+        ]);
+
+        $id = auth()->user()->id;
+        $checkInvite = Invite::where('user_id', $request->user_id)->where('invited_id', $id)->get();
+        $checkRoom1 = rooms::where('user_id', $id)->get();
+        $checkRoom2 = rooms::where('creator_id', $id)->get();
+
+        if($request->user_id == $id) {
+            $response = [
+                'message'=> 'you cant invite yourself',
+                'success' => false,
+            ];
+    
+            return response($response);
+        }
+        else if(count($checkRoom2) !== 0 && $request->user_id < $id  || count($checkRoom1) !== 0 && $request->user_id < $id) {
+            $response = [
+                'message'=> 'cant invite this user',
+                'success' => false,
+            ];
+    
+            return response($response);
+        }
+        else if(count($checkInvite) == 0 && count($checkRoom2) == 0 && count($checkRoom1) == 0 && auth()->user()->tutorial == 0 && $request->user_id > $id) {
+            $invite= Invite::create([
+                'user_id'=> $request->user_id,
+                'invited_id' => $id
+            ]);
+
+            $response = [
+                'invite'=> $invite,
+                'message'=> 'invite created',
+                'success' => true,
+            ];
+    
+            return response($response);
+        }
+        else {
+            $response = [
+                'message'=> 'invite exists',
+                'success' => false,
+            ];
+    
+            return response($response);
+        }
+
+
+
     }
 
     /**

@@ -17,10 +17,10 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('email')->unique();
-            $table->string('gender')->nullable();
-            // $table->boolean('student');
+            $table->bigInteger('avatar_id');
+            $table->boolean('tutorial');
             $table->string('location')->nullable();
-            // $table->string('department')->nullable();
+            $table->string('nickname')->nullable();
             // $table->string('faculty')->nullable();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
