@@ -122,9 +122,9 @@ class RoomMessageController extends Controller
     
             return response($response);
         }
-        else if ($room->creator_id !== $id && $room->user_id !== $id) {
+        else if ($room->user_id !== $id && $room->creator_id !== $id) {
             $response = [
-                'message'=> "can't send this message",
+                'message'=> "you can't send this message",
                 'success' => false
             ];
     

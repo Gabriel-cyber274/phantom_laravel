@@ -123,22 +123,21 @@ class RoomController extends Controller
 
 
         $result1 = [];
-        foreach($myRooms as $room) {
-            foreach($users as $user) {
-                $main = [
-                    'id'=> $room->id,
-                    'user_id'=>$room->user_id,
-                    'room_name'=> $user->nickname,
-                    'creator_id'=> $room->creator_id,
-                    'avatar'=> User::where('id', $room->user_id)->get()->first()->avatar_id,
-                    'created_at'=> $room->created_at,
-                    'updated_at'=> $room->updated_at,
-                    'unread'=> count($myUnread),    
-                    'messages'=> $room->messages[count($room->messages)-1]
-                ];
-                $result1[]= $main;
-            }
+        for ($i=0; $i < count($myRooms); $i++) { 
+            $main = [
+                'id'=> $myRooms[$i]->id,
+                'user_id'=>$myRooms[$i]->user_id,
+                'room_name'=> $users[$i]->nickname,
+                'creator_id'=> $myRooms[$i]->creator_id,
+                'avatar'=> User::where('id', $myRooms[$i]->user_id)->get()->first()->avatar_id,
+                'created_at'=> $myRooms[$i]->created_at,
+                'updated_at'=> $myRooms[$i]->updated_at,
+                'unread'=> count($myUnread),    
+                'messages'=> $myRooms[$i]->messages[count($myRooms[$i]->messages)-1]
+            ];
+            $result1[]= $main;
         }
+
 
 
         $sortedL = collect($result1)->sortByDesc('messages');
