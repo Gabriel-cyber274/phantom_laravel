@@ -17,6 +17,11 @@ class AnonymousMessage extends Model
         'hint_text',
     ];
 
+    
+    protected $casts = [
+        'anonymous_id' => 'integer',
+    ];
+
 
     public function anonymous() {
         return $this->belongsToMany(AnonymousMessage::class, 'anon_message', 'message_id', 'anon_id');

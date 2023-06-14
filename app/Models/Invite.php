@@ -13,4 +13,11 @@ class Invite extends Model
         'user_id',
         'invited_id'
     ];
+
+        
+    protected $casts = [
+        'user_id' => 'integer',
+        'invited_id' => 'integer',
+    ];
+
 }

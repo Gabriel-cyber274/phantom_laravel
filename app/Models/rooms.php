@@ -20,6 +20,17 @@ class rooms extends Model
         'links'
     ];
 
+    
+    protected $casts = [
+        'user_id' => 'integer',
+        'creator_id' => 'integer',
+        'creator_avatar' => 'integer',
+        'block' => 'integer',
+        'report' => 'integer',
+        'links' => 'integer',
+        'reveal' => 'integer',
+    ];
+
     public function user() {
         return $this->belongsTo(User::class);
     }

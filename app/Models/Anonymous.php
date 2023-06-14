@@ -12,8 +12,12 @@ class Anonymous extends Model
     protected $fillable = [
         'user_id',
         'name',
-        
     ];
+
+    protected $casts = [
+        'user_id' => 'integer',
+    ];
+    
 
     
     public function user() {

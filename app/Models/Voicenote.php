@@ -14,6 +14,10 @@ class Voicenote extends Model
         'name',
         'file_path'
     ];
+    
+    protected $casts = [
+        'message_id' => 'integer',
+    ];
 
     public function message () {
         return $this->belongsTo(RoomMessage::class, 'message_id', 'id');

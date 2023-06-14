@@ -21,6 +21,16 @@ class RoomMessage extends Model
         'message_id'
     ];
 
+      
+    protected $casts = [
+        'user_id' => 'integer',
+        'sender_id' => 'integer',
+        'room_id' => 'integer',
+        'reply_id' => 'integer',
+        'message_id' => 'integer',
+        'seen' => 'integer',
+    ];
+
     public function rooms () {
         return $this->belongsToMany(rooms::class, 'room_chats', 'chat_id', 'room_id');
     }
