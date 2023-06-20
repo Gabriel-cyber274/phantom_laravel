@@ -52,29 +52,53 @@ class RoomController extends Controller
         //
         $id = auth()->user()->id;
         $myRooms = rooms::has('messages')->with('messages')->where('user_id', $id)->get();
-        $roomids = [];
+        // $roomids = [];
 
-        foreach($myRooms as $room) {
-            $roomids[]= RoomMessage::where('room_id', $room->id)->where('seen', 0)->get();
-        }
+        // foreach($myRooms as $room) {
+        //     $roomids[]= RoomMessage::where('room_id', $room->id)->where('seen', 0)->get();
+        // }
 
 
-        $myUnread = collect($roomids)->first();
+        // $myUnread = collect($roomids)->first();
 
         $result1 = [];
         foreach($myRooms as $room) {
-            $main = [
-                'id'=> $room->id,
-                'user_id'=>$room->user_id,
-                'room_name'=> $room->room_name,
-                'creator_id'=> $room->creator_id,
-                'avatar'=> User::where('id', $room->creator_id)->get()->first()->avatar_id,
-                'created_at'=> $room->created_at,
-                'updated_at'=> $room->updated_at,
-                'unread'=> count($myUnread),
-                'messages'=> $room->messages[count($room->messages)-1]
-            ];
-            $result1[]= $main;
+            $unreadG = collect($room->messages)->where('seen', 0);
+            $unread  = [];
+            foreach($unreadG->values()->all() as $data){
+                $unread[] = $data;
+            }
+
+            if($room->reveal !== 0) {
+                $main = [
+                    'id'=> $room->id,
+                    'user_id'=>$room->user_id,
+                    'room_name'=> User::where('id', $room->creator_id)->get()->first()->name,
+                    'creator_id'=> $room->creator_id,
+                    'avatar'=> User::where('id', $room->creator_id)->get()->first()->avatar_id,
+                    'created_at'=> $room->created_at,
+                    'updated_at'=> $room->updated_at,
+                    'unread'=> count($unread),
+                    'reveal'=> $room->reveal,
+                    'messages'=> $room->messages[count($room->messages)-1]
+                ];
+                $result1[]= $main;
+            }else {
+                $main = [
+                    'id'=> $room->id,
+                    'user_id'=>$room->user_id,
+                    'room_name'=> $room->room_name,
+                    'creator_id'=> $room->creator_id,
+                    'avatar'=> User::where('id', $room->creator_id)->get()->first()->avatar_id,
+                    'created_at'=> $room->created_at,
+                    'updated_at'=> $room->updated_at,
+                    'unread'=> count($unread),
+                    'reveal'=> $room->reveal,
+                    'messages'=> $room->messages[count($room->messages)-1]
+                ];
+                $result1[]= $main;
+
+            }
         }
 
 
@@ -102,14 +126,14 @@ class RoomController extends Controller
         $myRooms = rooms::has('messages')->with('messages')->where('creator_id', $id)->get();
 
 
-        $roomids = [];
+        // $roomids = [];
 
-        foreach($myRooms as $room) {
-            $roomids[]= RoomMessage::where('room_id', $room->id)->where('seen', 0)->get();
-        }
+        // foreach($myRooms as $room) {
+        //     $roomids[]= RoomMessage::where('room_id', $room->id)->where('seen', 0)->get();
+        // }
 
 
-        $myUnread = collect($roomids)->first();
+        // $myUnread = collect($roomids)->first();
 
         
         $user_ids = [];
@@ -124,15 +148,22 @@ class RoomController extends Controller
 
         $result1 = [];
         for ($i=0; $i < count($myRooms); $i++) { 
+            $unreadG = collect($myRooms[$i]->messages)->where('seen', 0);
+            $unread  = [];
+            foreach($unreadG->values()->all() as $data){
+                $unread[] = $data;
+            }
+
             $main = [
                 'id'=> $myRooms[$i]->id,
                 'user_id'=>$myRooms[$i]->user_id,
-                'room_name'=> $users[$i]->nickname,
+                // 'room_name'=> $users[$i]->nickname,
+                'room_name'=> $users[$i]->name,
                 'creator_id'=> $myRooms[$i]->creator_id,
                 'avatar'=> User::where('id', $myRooms[$i]->user_id)->get()->first()->avatar_id,
                 'created_at'=> $myRooms[$i]->created_at,
                 'updated_at'=> $myRooms[$i]->updated_at,
-                'unread'=> count($myUnread),    
+                'unread'=> count($unread),    
                 'messages'=> $myRooms[$i]->messages[count($myRooms[$i]->messages)-1]
             ];
             $result1[]= $main;

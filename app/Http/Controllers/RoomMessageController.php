@@ -84,14 +84,14 @@ class RoomMessageController extends Controller
     
             return response($response); 
         }
-        else {
-            $response = [
-                'message'=> 'you have no chat with this person',
-                'success' => false
-            ];
+        // else {
+        //     $response = [
+        //         'message'=> 'you have no chat with this person',
+        //         'success' => false
+        //     ];
     
-            return response($response);
-        }
+        //     return response($response);
+        // }
     }
 
     /**
