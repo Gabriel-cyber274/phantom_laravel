@@ -11,7 +11,8 @@ use App\Models\User;
 use App\Models\Invite;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
-
+// use App\Mail\MyCustomMail;
+// use Illuminate\Support\Facades\Mail;
 
 class Authcontroller extends Controller
 {
@@ -85,6 +86,8 @@ class Authcontroller extends Controller
             'email'=> 'required|string|unique:users,email',
             'password'=> 'required|string|min:8',
             'location'=>'nullable|string',
+            'question'=> 'required|string',
+            'answer'=> 'required|string',
         ]);
 
         if($fields->fails()) {
@@ -107,6 +110,8 @@ class Authcontroller extends Controller
                 'gender'=> $request['gender'],
                 'location'=> $request['location'],
                 'tutorial'=> false,
+                'question'=> $request['question'],
+                'answer'=> $request['answer'],
                 'avatar_id'=> random_int(0,$avatar->first()->available),
             ]);
     
@@ -119,6 +124,14 @@ class Authcontroller extends Controller
                 'message'=> 'successful signup',
                 'success' => true
             ];
+
+            
+            $data = [
+                'user'=> $user
+            ];
+            
+            // Mail::to('gabrielimoh30@gmail.com')->send(new MyCustomMail($data));
+
     
             return response($response);
         }
@@ -130,6 +143,8 @@ class Authcontroller extends Controller
                 'gender'=> $request['gender'],
                 'location'=> $request['location'],
                 'tutorial'=> false,
+                'question'=> $request['question'],
+                'answer'=> $request['answer'],
                 'avatar_id'=> random_int(0,3),
             ]);
     
@@ -142,6 +157,12 @@ class Authcontroller extends Controller
                 'message'=> 'successful signup',
                 'success' => true
             ];
+            
+            $data = [
+                'user'=> $user
+            ];
+            
+            // Mail::to($user->email)->send(new MyCustomMail($data));
     
             return response($response);
         }
@@ -309,6 +330,95 @@ class Authcontroller extends Controller
 
 
     }
+
+    
+    public function forgotPasswordCheck (Request $request) {
+        $fields = $request->validate([
+            'email' => 'required|string',
+            'question'=> 'required|string',
+            'answer'=> 'required|string',
+        ]);   
+
+        $user = User::where('email', $request->email)->get();
+
+        if(count($user) == 0) {
+            $response = [
+                'message'=> "email doesn't belong to a user",
+                'success' => false
+            ];
+    
+            return response($response);
+        }
+        else if ($user->first()->question !== $request->question && $user->first()->answer === $request->answer || $user->first()->question === $request->question && $user->first()->answer !== $request->answer) {
+            $response = [
+                'message'=> "incorrect question or answer",
+                'success' => false
+            ];
+    
+            return response($response);
+        }
+        else if(count($user) !== 0 && $user->first()->question == $request->question && $user->first()->answer === $request->answer) {
+            $response = [
+                'message'=> "correct",
+                'success' => true
+            ];
+    
+            return response($response);
+        }
+        else {
+            $response = [
+                'message'=> "incorrect",
+                'success' => false
+            ];
+    
+            return response($response);
+        }
+        
+    }
+
+    public function changePassword (Request $request) {
+        $fields = Validator::make($request->all(),[
+            'email' => 'required|string',
+            'password'=> 'required|string|min:8',
+        ]);
+
+        
+        if($fields->fails()) {
+            $response = [
+                'errors'=> $fields->errors(),
+                'success' => false
+            ];
+
+            return response($response);
+        }
+        
+        $user = User::where('email', $request->email)->get();
+
+        if(count($user)!== 0) {
+            $user->first()->update([
+                'password'=> bcrypt($request->password),
+            ]);
+            $response = [
+                'message'=> "password changed successfully",
+                'success' => true
+            ];
+
+            return response($response);
+        }
+        else {
+            $response = [
+                'message'=> "email provided does not belong to a user",
+                'success' => false
+            ];
+
+            return response($response);
+        }
+
+            
+    }
+
+    
+
 
     /**
      * Display the specified resource.

@@ -16,6 +16,8 @@ return new class extends Migration
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->string('question');
+            $table->string('answer');
             $table->string('email')->unique();
             $table->bigInteger('avatar_id');
             $table->boolean('tutorial');

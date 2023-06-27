@@ -6,10 +6,12 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AnonymousController;
 use App\Http\Controllers\AnonymousMessageController;
 use App\Http\Controllers\RoomController;
+use App\Http\Controllers\mailController;
 use App\Http\Controllers\RoomMessageController;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Response;
 
+// mailController
 // RoomMessageController
  
 
@@ -34,6 +36,12 @@ Route::get('/index', function () {
 
 Route::post('/register', [AuthController::class, 'Register']);
 Route::post('/login', [AuthController::class, 'Login']);
+Route::post('/forgotPasswordCheck', [AuthController::class, 'forgotPasswordCheck']);
+Route::post('/changePassword', [AuthController::class, 'changePassword']);
+
+
+
+// Route::post('/login', [AuthController::class, 'Login']);
 
 Route::get('voicenotes/{filename}', function ($filename) {
     $path = public_path('storage/voicenotes/'. $filename);
@@ -50,6 +58,10 @@ Route::get('voicenotes/{filename}', function ($filename) {
     ]);
 
 })->name('voicenote.get');
+
+
+Route::get('/testMail', [mailController::class, 'sendEmail']);
+
 
 Route::group(['middleware'=> ['auth:sanctum']], function () {
     Route::post('/createLink', [AnonymousController::class, 'createLink']);
