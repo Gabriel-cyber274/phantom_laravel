@@ -296,7 +296,7 @@ class Authcontroller extends Controller
     
             return response($response);
         }
-        else if(count($checkRoom2) !== 0 && $request->user_id < $id  || count($checkRoom1) !== 0 && $request->user_id < $id) {
+        else if(count($checkRoom2) !== 0 && $request->user_id > $id && auth()->user()->tutorial == 1  || count($checkRoom1) !== 0 && $request->user_id > $id && auth()->user()->tutorial == 1) {
             $response = [
                 'message'=> 'cant invite this user',
                 'success' => false,
@@ -304,7 +304,7 @@ class Authcontroller extends Controller
     
             return response($response);
         }
-        else if(count($checkInvite) == 0 && count($checkRoom2) == 0 && count($checkRoom1) == 0 && auth()->user()->tutorial == 0 && $request->user_id > $id) {
+        else if(count($checkInvite) == 0 && count($checkRoom2) == 0 && count($checkRoom1) == 0 && auth()->user()->tutorial == 0 && $request->user_id < $id) {
             $invite= Invite::create([
                 'user_id'=> $request->user_id,
                 'invited_id' => $id
@@ -349,7 +349,7 @@ class Authcontroller extends Controller
     
             return response($response);
         }
-        else if ($user->first()->question !== $request->question && $user->first()->answer === $request->answer || $user->first()->question === $request->question && $user->first()->answer !== $request->answer) {
+        else if ($user->first()->question !== $request->question && $user->first()->answer === $request->answer || $user->first()->question === $request->question && $user->first()->answer !== $request->answer || $user->first()->question !== $request->question && $user->first()->answer !== $request->answer) {
             $response = [
                 'message'=> "incorrect question or answer",
                 'success' => false
