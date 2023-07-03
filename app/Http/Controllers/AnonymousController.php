@@ -11,7 +11,7 @@ use App\Models\rooms;
 use App\Models\User;
 use App\Models\AnonymousMessage;
 use Illuminate\Support\Str;
-
+use Carbon\Carbon;
 
 class AnonymousController extends Controller
 {
@@ -117,10 +117,20 @@ class AnonymousController extends Controller
             $finalL[] = $data;
         }
 
-        $weeklyL = collect($finalL)->where('created_at', '==', now()->subHours(167))->all();
-        $monthL = collect($finalL)->where('created_at', '==', now()->subHours(690))->all();
+        // $weeklyL = collect($finalL)->where('created_at', '==', now()->subHours(167))->all();
+        // $monthL = collect($finalL)->where('created_at', '==', now()->subHours(690))->all();
 
+        $weeklyL = collect($finalL)->whereBetween('created_at', [
+            Carbon::today()->subWeek()->startOfWeek(),
+            Carbon::today()->subWeek()->endOfWeek(),
+        ])->all();
+
+        $monthL = collect($finalL)->whereBetween('created_at', [
+            Carbon::today()->subMonth()->startOfMonth(),
+            Carbon::today()->subMonth()->endOfMonth(),
+        ])->all();
         
+
         $response = [
             'all'=> $finalL,
             'weekly'=> $weeklyL,
