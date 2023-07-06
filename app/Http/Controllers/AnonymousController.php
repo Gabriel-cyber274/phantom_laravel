@@ -45,7 +45,8 @@ class AnonymousController extends Controller
     public function goodReviews()
     {
         $id = auth()->user()->id;
-        $myLocationUsers = User::with('invite')->where('location', auth()->user()->location)->get();
+        // $myLocationUsers = User::with('invite')->where('location', auth()->user()->location)->get();
+        $myLocationUsers = User::with('invite')->get();
 
         $result1 = [];
 
@@ -120,15 +121,21 @@ class AnonymousController extends Controller
         // $weeklyL = collect($finalL)->where('created_at', '==', now()->subHours(167))->all();
         // $monthL = collect($finalL)->where('created_at', '==', now()->subHours(690))->all();
 
-        $weeklyL = collect($finalL)->whereBetween('created_at', [
-            Carbon::today()->subWeek()->startOfWeek(),
-            Carbon::today()->subWeek()->endOfWeek(),
-        ])->all();
+        // $weeklyL = collect($finalL)->whereBetween('created_at', [
+        //     Carbon::today()->subWeek()->startOfWeek(),
+        //     Carbon::today()->subWeek()->endOfWeek(),
+        // ])->all();
 
-        $monthL = collect($finalL)->whereBetween('created_at', [
-            Carbon::today()->subMonth()->startOfMonth(),
-            Carbon::today()->subMonth()->endOfMonth(),
-        ])->all();
+
+        $weeklyL = collect($finalL)->where('created_at', '<=', Carbon::now()->subWeek())->all();
+        
+        
+        $monthL = collect($finalL)->where('created_at', '<=', Carbon::now()->subMonth())->all();
+
+        // $monthL = collect($finalL)->whereBetween('created_at', [
+        //     Carbon::today()->subMonth()->startOfMonth(),
+        //     Carbon::today()->subMonth()->endOfMonth(),
+        // ])->all();
         
 
         $response = [
